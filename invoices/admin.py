@@ -1,6 +1,7 @@
 import json
 from django.contrib import admin, messages
 from django.utils.html import format_html
+from django.urls import reverse
 from .models import OdooInvoice
 from .services.odoo_invoices import fetch_odoo_invoices
 
@@ -8,7 +9,7 @@ from .services.odoo_invoices import fetch_odoo_invoices
 class OdooInvoiceAdmin(admin.ModelAdmin):
     list_display = ("name", "partner", "invoice_date", "amount_total", "data_preview")
     search_fields = ("name", "partner")
-    readonly_fields = ("pretty_data",)
+    readonly_fields = ("pretty_data", "download_ubl_button")
 
     fieldsets = (
         (None, {
@@ -16,6 +17,9 @@ class OdooInvoiceAdmin(admin.ModelAdmin):
         }),
         ("Raw Odoo Data", {
             "fields": ("pretty_data",),
+        }),
+        ("Actions", {
+            "fields": ("download_ubl_button",),
         }),
     )
 
@@ -80,3 +84,11 @@ class OdooInvoiceAdmin(admin.ModelAdmin):
             return str(obj.data)
         return format_html("<pre style=\"white-space:pre-wrap;max-height:70vh;overflow:auto\">{}</pre>", json_str)
     pretty_data.short_description = "Data (pretty JSON)"
+
+    def download_ubl_button(self, obj):
+        try:
+            url = reverse("invoice_download_ubl", args=[obj.id])
+        except Exception:
+            return ""
+        return format_html('<a class="button" href="{}">Download UBL XML</a>', url)
+    download_ubl_button.short_description = "Download UBL"
